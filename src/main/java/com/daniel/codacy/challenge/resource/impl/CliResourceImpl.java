@@ -16,9 +16,8 @@ public class CliResourceImpl implements CliResource {
     CliService cliService;
 
     @Override
-    public Response commitHistory(String owner, String repository) throws IOException, ParseException {
-        //cliService.runCommand("git", "clone", "https://github.com/dfcmmendes/MotorolaSolution.git");
-        return Response.ok(cliService.parseCommits(cliService.runCommand("git", "log")))
+    public Response commitHistory(String owner, String repository) throws IOException, InterruptedException, ParseException {
+        return Response.ok(cliService.parseCommits(cliService.getCommitHistory(owner, repository)))
                 .build();
     }
 }

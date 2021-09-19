@@ -39,5 +39,5 @@ public interface CliResource {
                     in = ParameterIn.PATH
             )
             String repository
-    ) throws IOException, ParseException;
+    ) throws IOException, InterruptedException, ParseException;
 }
