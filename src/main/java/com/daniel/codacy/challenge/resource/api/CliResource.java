@@ -5,11 +5,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
-import javax.validation.Valid;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -23,6 +19,24 @@ public interface CliResource {
     @Path("/log/{owner}/{repository}")
     @APIResponse(description = "Commits history", responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON))
     Response commitHistory(
+            @QueryParam("page")
+            @DefaultValue("1")
+            @Parameter(
+                    name = "page",
+                    description = "page number",
+                    example = "1",
+                    in = ParameterIn.QUERY
+            )
+            Integer page,
+            @QueryParam("per_page")
+            @DefaultValue("5")
+            @Parameter(
+                    name = "per_page",
+                    description = "Number of commits per page",
+                    example = "5",
+                    in = ParameterIn.QUERY
+            )
+            Integer perPage,
             @PathParam("owner")
             @Parameter(
                     name = "owner",

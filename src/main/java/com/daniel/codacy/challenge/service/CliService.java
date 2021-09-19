@@ -1,6 +1,7 @@
 package com.daniel.codacy.challenge.service;
 
 import com.daniel.codacy.challenge.model.CommitDto;
+import com.daniel.codacy.challenge.model.CommitPageDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -24,7 +25,7 @@ public class CliService {
     @Inject
     ObjectMapper objectMapper;
 
-    public List<CommitDto> getCommitHistory(String owner, String repository) throws IOException, InterruptedException {
+    public CommitPageDto getCommitHistory(Integer page, Integer perPage, String owner, String repository) throws IOException, InterruptedException {
 
         Path path = Files.createTempDirectory(PATH);
         File file = path.toFile();
@@ -55,23 +56,30 @@ public class CliService {
             }
         }
 
-        return parseCommits(result.toString());
+        return parseCommits(result.toString(), page, perPage);
     }
 
-    public List<CommitDto> parseCommits(String commitList) throws JsonProcessingException {
+    public CommitPageDto parseCommits(String commitList, Integer page, Integer perPage) throws JsonProcessingException {
         List<CommitDto> commits = new ArrayList<>();
         CommitDto currentCommit;
         String[] parsedList = commitList.split(PIPE_DELIMITER);
         objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
-        for (String currentLine: parsedList) {
-            currentCommit = objectMapper.readValue(currentLine, CommitDto.class);
+        for(int i = (page - 1) * perPage; i < page * perPage; i++) {
+            if(i >= parsedList.length) {
+                break;
+            }
+            currentCommit = objectMapper.readValue(parsedList[i], CommitDto.class);
             commits.add(currentCommit);
         }
 
-
-
-        return commits;
+        return CommitPageDto.builder()
+                .page(page)
+                .perPage(perPage)
+                .count(commits.size())
+                .total(parsedList.length)
+                .items(commits)
+                .build();
     }
 
     private String[] buildCloneCommand(final String owner, final String repository) {
