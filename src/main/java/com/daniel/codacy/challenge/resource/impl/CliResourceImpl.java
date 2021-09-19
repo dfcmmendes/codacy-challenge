@@ -1,5 +1,6 @@
 package com.daniel.codacy.challenge.resource.impl;
 
+import com.daniel.codacy.challenge.errorhandling.ServiceException;
 import com.daniel.codacy.challenge.resource.api.CliResource;
 import com.daniel.codacy.challenge.service.CliService;
 import com.daniel.codacy.challenge.service.GitApiService;
@@ -21,9 +22,10 @@ public class CliResourceImpl implements CliResource {
     @Inject
     GitApiService gitApiService;
 
+    //Could use a CompletableFuture in order to do Async requests for longer commits' lists
     @Override
     @Timeout(20000)
-    @Fallback(fallbackMethod = "commitHistoryCli")
+    @Fallback(fallbackMethod = "commitHistoryCli", skipOn = ServiceException.class)
     public Response commitHistory(Integer page, Integer perPage, String owner, String repository) {
         return Response.ok(gitApiService.commitHistory(owner, repository, page, perPage)).build();
     }

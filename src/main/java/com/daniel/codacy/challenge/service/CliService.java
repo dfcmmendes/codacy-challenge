@@ -1,9 +1,12 @@
 package com.daniel.codacy.challenge.service;
 
+import com.daniel.codacy.challenge.errorhandling.ServiceException;
 import com.daniel.codacy.challenge.model.CommitDto;
 import com.daniel.codacy.challenge.model.CommitPageDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -17,15 +20,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.daniel.codacy.challenge.errorhandling.ErrorCodeImpl.INTERNAL_SERVER_ERROR;
+
 @ApplicationScoped
 public class CliService {
     private static final String PIPE_DELIMITER = "\\|";
     private static final String PATH = "repos";
+    private static final Logger log = LoggerFactory.getLogger(ServiceException.class);
 
     @Inject
     ObjectMapper objectMapper;
 
-    public CommitPageDto getCommitHistory(Integer page, Integer perPage, String owner, String repository) throws IOException, InterruptedException {
+    public CommitPageDto getCommitHistory(Integer page, Integer perPage, String owner, String repository) throws IOException {
 
         Path path = Files.createTempDirectory(PATH);
         File file = path.toFile();
@@ -36,13 +42,30 @@ public class CliService {
                 .directory(file);
 
         Process process = processBuilder.start();
-        process.waitFor();
+        try {
+            process.waitFor();
+        } catch (InterruptedException e) {
+            final Logger log = LoggerFactory.getLogger(InterruptedException.class);
+            log.error("git clone failed");
+            file.delete();
+            repoFile.delete();
+            throw new ServiceException(INTERNAL_SERVER_ERROR);
+        }
 
         processBuilder = new ProcessBuilder()
                 .command(buildLogCommand())
                 .directory(repoFile);
 
-        process = processBuilder.start();
+        try {
+            process = processBuilder.start();
+        } catch (IOException e) {
+            final Logger log = LoggerFactory.getLogger(IOException.class);
+            log.error("git log failed");
+            file.delete();
+            repoFile.delete();
+            throw new ServiceException(INTERNAL_SERVER_ERROR);
+        }
+
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
         StringBuilder result = new StringBuilder();
@@ -55,6 +78,9 @@ public class CliService {
                 result.append(PIPE_DELIMITER);
             }
         }
+
+        file.delete();
+        repoFile.delete();
 
         return parseCommits(result.toString(), page, perPage);
     }

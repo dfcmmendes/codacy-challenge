@@ -1,0 +1,10 @@
+version: '3.3'
+services:
+  quarkus-dev:
+    build:
+      context: ../../
+      dockerfile: main/docker/Dockerfile
+    image: codacy-challenge
+    ports:
+      - "8080:8080"
+      - "5005:5005"
