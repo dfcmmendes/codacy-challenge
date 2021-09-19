@@ -17,7 +17,7 @@ public class CliResourceImpl implements CliResource {
 
     @Override
     public Response commitHistory(String owner, String repository) throws IOException, InterruptedException, ParseException {
-        return Response.ok(cliService.parseCommits(cliService.getCommitHistory(owner, repository)))
+        return Response.ok(cliService.getCommitHistory(owner, repository))
                 .build();
     }
 }

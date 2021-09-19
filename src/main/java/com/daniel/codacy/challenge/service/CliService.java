@@ -1,28 +1,30 @@
 package com.daniel.codacy.challenge.service;
 
 import com.daniel.codacy.challenge.model.CommitDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.swing.*;
+import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.ParseException;
-import java.time.Instant;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 @ApplicationScoped
 public class CliService {
     private static final String PIPE_DELIMITER = "\\|";
-    private static final String URL_PREFIX = "git@github.com:";
     private static final String PATH = "repos";
 
-    public String getCommitHistory(String owner, String repository) throws IOException, InterruptedException {
+    @Inject
+    ObjectMapper objectMapper;
+
+    public List<CommitDto> getCommitHistory(String owner, String repository) throws IOException, InterruptedException {
 
         Path path = Files.createTempDirectory(PATH);
         File file = path.toFile();
@@ -36,7 +38,7 @@ public class CliService {
         process.waitFor();
 
         processBuilder = new ProcessBuilder()
-                .command(buildLogCommand(owner, repository))
+                .command(buildLogCommand())
                 .directory(repoFile);
 
         process = processBuilder.start();
@@ -48,34 +50,26 @@ public class CliService {
         while ( (currentLine = reader.readLine()) != null) {
             if (!currentLine.isEmpty()) {
                 result.append(currentLine);
+                result.append(reader.readLine());
                 result.append(PIPE_DELIMITER);
             }
         }
 
-        return result.toString();
+        return parseCommits(result.toString());
     }
 
-    public List<CommitDto> parseCommits(String commitList) throws ParseException {
-
+    public List<CommitDto> parseCommits(String commitList) throws JsonProcessingException {
         List<CommitDto> commits = new ArrayList<>();
+        CommitDto currentCommit;
         String[] parsedList = commitList.split(PIPE_DELIMITER);
-        int i = 0;
-        String sha, author, date, message;
+        objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
-        while(i < parsedList.length) {
-            sha = parsedList[i].split(" ")[1].trim().replace("\\", "");
-            author = parsedList[i+1].split(":")[1].split(" ")[1].trim();
-            date = parsedList[i+2].replace("Date:", "").trim().replace("\\", "");
-            message = parsedList[i+3].trim().replace("\\", "");
-
-            commits.add(CommitDto.builder()
-                    .sha(sha)
-                    .author(author)
-                    //.date(ZonedDateTime.parse(date, DateTimeFormatter.ofPattern("EE MMM dd HH:mm:ss yyyy XX", Locale.ENGLISH)))
-                    .message(message)
-                    .build());
-            i+=4;
+        for (String currentLine: parsedList) {
+            currentCommit = objectMapper.readValue(currentLine, CommitDto.class);
+            commits.add(currentCommit);
         }
+
+
 
         return commits;
     }
@@ -85,7 +79,7 @@ public class CliService {
         return new String[] {"git", "clone", "-n", repoUrl};
     }
 
-    private String[] buildLogCommand(final String owner, final String repository) {
-        return new String[] {"git", "log"};
+    private String[] buildLogCommand() {
+        return new String[] {"git", "log", "--date=format:%Y-%m-%d %H:%M:%S","--pretty=format:{\\\"sha\\\": \\\"%H\\\", \\\"author\\\": \\\"%an\\\", \\\"date\\\": \\\"%ad\\\", \\\"message\\\": \\\"%B\\\"}"};
     }
 }

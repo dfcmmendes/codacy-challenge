@@ -6,8 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-import java.time.ZonedDateTime;
+import java.util.Date;
 
 
 @Builder
@@ -19,8 +18,8 @@ public class CommitDto {
     @JsonProperty("message")
     String message;
     @JsonProperty("date")
-    //@JsonFormat(pattern = "EE MMM dd HH:mm:ss yyyy XX")
-    Instant date;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    Date date;
     @JsonProperty("author")
     String author;
 
