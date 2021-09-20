@@ -23,17 +23,17 @@ public class CliResourceIT {
                         "per_page", equalTo(5),
                         "count", equalTo(5),
                         "items", hasSize(5),
-                        "items[0].message", equalTo("Change tests"));
+                        "items[0].message", equalTo("Update Readme"));
     }
 
     @Test
     public void  testCommitHistory() {
         given()
                 .when()
-                .get("/codacy/log/dfcmmendes/codacy-challenge?page=6&per_page=1")
+                .get("/codacy/log/dfcmmendes/codacy-challenge?page=7&per_page=1")
                 .then()
                 .statusCode(OK.getStatusCode())
-                .body("page", equalTo(6),
+                .body("page", equalTo(7),
                         "per_page", equalTo(1),
                         "count", equalTo(1),
                         "items", hasSize(1),
